@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morse Code Converter</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --input-bg: #090d16;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 1.75rem;
+            color: #ffffff;
+        }
+
+        .group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        select, textarea {
+            width: 100%;
+            background-color: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        select:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+
+        textarea {
+            height: 110px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.99);
+        }
+
+        .result-container {
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: var(--border);
+            color: var(--text);
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Morse Code Converter</h2>
+        
+        <div class="group">
+            <label for="mode">Conversion Mode</label>
+            <select id="mode" onchange="clearFields()">
+                <option value="text_to_morse">Text ➔ Morse Code</option>
+                <option value="morse_to_text">Morse Code ➔ Text</option>
+            </select>
+        </div>
+
+        <div class="group">
+            <label for="inputText">Input</label>
+            <textarea id="inputText" placeholder="Enter text here..."></textarea>
+        </div>
+        
+        <button class="btn" onclick="convertText()">Convert</button>
+
+        <div class="group" style="margin-top: 24px;">
+            <label for="outputText">Result</label>
+            <div class="result-container">
+                <textarea id="outputText" readonly placeholder="Translation will appear here..."></textarea>
+                <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()">Copy Text</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Automatically clears both text boxes when switching options
+        function clearFields() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').value = '';
+        }
+
+        // Sends conversion request to Flask backend
+        async function convertText() {
+            const text = document.getElementById('inputText').value;
+            const mode = document.getElementById('mode').value;
+            const outputBox = document.getElementById('outputText');
+
+            if (!text.trim()) {
+                outputBox.value = '';
+                return;
+            }
+
+            const response = await fetch('/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: text, mode: mode })
+            });
+
+            const data = await response.json();
+            outputBox.value = data.result;
+        }
+
+        // Copies translated text directly to clipboard
+        async function copyToClipboard() {
+            const outputText = document.getElementById('outputText').value;
+            const copyBtn = document.getElementById('copyBtn');
+
+            if (!outputText) return;
+
+            await navigator.clipboard.writeText(outputText);
+            
+            // Visual feedback when copied
+            copyBtn.innerText = 'Copied!';
+            copyBtn.style.backgroundColor = 'var(--success)';
+
+            setTimeout(() => {
+                copyBtn.innerText = 'Copy Text';
+                copyBtn.style.backgroundColor = '';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
